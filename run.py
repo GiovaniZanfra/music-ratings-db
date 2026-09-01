@@ -1,3 +1,4 @@
+import os
 import re
 import time
 
@@ -7,7 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 # Constants
 USER = "gigs12345678"
-API_KEY = "59291322021a0f4c876ab24ee0c7fc3a"
+API_KEY = os.environ["LASTFM_API_KEY"]
 URL = "http://ws.audioscrobbler.com/2.0/"
 
 # Google Sheets setup
