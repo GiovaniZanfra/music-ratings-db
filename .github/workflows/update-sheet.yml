@@ -1,6 +1,8 @@
 name: Update music sheet
 
 on:
+  schedule:
+    - cron: '50 2 * * *'  # 23:50 in Brasília (UTC-3)
   workflow_dispatch:
     inputs:
       enrich:
