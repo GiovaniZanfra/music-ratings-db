@@ -1,0 +1,38 @@
+name: Update music sheet
+
+on:
+  workflow_dispatch:
+    inputs:
+      enrich:
+        description: 'Also run album enrichment (enrich_albums.py)'
+        type: boolean
+        default: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PYTHONUNBUFFERED: '1'
+      LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests==2.32.4 gspread==6.2.1 oauth2client==4.1.3
+
+      - name: Write Google service account credentials
+        env:
+          GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+        run: printf '%s' "$GCP_SA_JSON" > lastfm-to-sheets-ed442fe7881c.json
+
+      - name: Ingest recent tracks
+        run: python run.py
+
+      - name: Enrich albums
+        if: ${{ inputs.enrich }}
+        run: python enrich_albums.py
