@@ -1,4 +1,5 @@
 lastfm-to-sheets-ed442fe7881c.json
 *.json.key
+.env
 __pycache__/
 *.pyc

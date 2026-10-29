@@ -1,5 +1,15 @@
 import os
 
+# Load KEY=VALUE pairs from a local, gitignored .env (real env vars win).
+_ENV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(_ENV_FILE):
+    with open(_ENV_FILE) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                os.environ.setdefault(key.strip(), value.strip())
+
 USER = "gigs12345678"
 API_KEY = os.environ["LASTFM_API_KEY"]
 URL = "http://ws.audioscrobbler.com/2.0/"

@@ -29,7 +29,8 @@ def extract_release_year(wiki_summary):
     """
     if not wiki_summary:
         return ""
-    match = re.search(r"released?\D{0,20}?(\d{4})", wiki_summary, re.IGNORECASE)
+    # Allow a day/month between "released" and the year ("released July 30, 1969").
+    match = re.search(r"released?\b.{0,40}?\b((?:19|20)\d{2})\b", wiki_summary, re.IGNORECASE)
     return match.group(1) if match else ""
 
 
