@@ -100,8 +100,7 @@ def upload_data():
             existing['tracks'].add(track_key)
 
             # Add all album tracks (playcount left blank: not scrobbled here,
-            # not worth an extra API call per filler track in the ongoing
-            # pipeline — the backfill script covers these separately)
+            # not worth an extra API call per filler track)
             for album_track in album_tracks:
                 album_track_key = (artist_info['id'], album_info['id'], album_track['name'])
 

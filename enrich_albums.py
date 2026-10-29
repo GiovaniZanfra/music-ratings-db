@@ -2,7 +2,7 @@ import argparse
 
 import gspread
 
-from config import ALBUM_EXTRA_COLUMNS, SHEET_ALBUMS, SHEET_MUSIC
+from config import ALBUM_EXTRA_COLUMNS, SHEET_ALBUMS
 from lastfm import compute_decade, fetch_album_tracks
 from sheets import chunked, ensure_headers, open_spreadsheet, write_batch
 
@@ -25,45 +25,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_music_migration_cache(ss):
-    """Reuse Genre/ReleaseYear/Decade already sitting in the Music sheet from
-    an earlier (since-reverted) attempt at storing them per-track, so we
-    don't re-hit the Last.fm API for albums we've already fetched.
-    Returns {} if Music no longer has those columns (nothing to reuse).
-    """
-    ws_music = ss.worksheet(SHEET_MUSIC)
-    values = ws_music.get_all_values()
-    if not values:
-        return {}
-
-    header = values[0]
-    needed = ['ArtistName', 'AlbumName', 'Genre', 'ReleaseYear', 'Decade']
-    if not all(col in header for col in needed):
-        return {}
-
-    idx = {col: header.index(col) for col in needed}
-    cache = {}
-    for row in values[1:]:
-        def cell(col):
-            i = idx[col]
-            return row[i] if i < len(row) else ''
-
-        artist, album = cell('ArtistName'), cell('AlbumName')
-        genre, year, decade = cell('Genre'), cell('ReleaseYear'), cell('Decade')
-        if not artist or not album:
-            continue
-        key = (artist, album)
-        if key not in cache and (genre or year or decade):
-            cache[key] = (genre, year, decade)
-    return cache
-
-
 def main():
     args = parse_args()
     ss = open_spreadsheet()
-
-    migration_cache = load_music_migration_cache(ss)
-    print(f"Reusing {len(migration_cache)} album(s) already enriched previously (no API call needed).")
 
     ws_albums = ss.worksheet(SHEET_ALBUMS)
     current_headers = ws_albums.row_values(1)
@@ -103,21 +67,15 @@ def main():
           f"in chunks of {CHUNK_SIZE}.")
 
     api_calls = 0
-    reused = 0
     written = 0
 
     for chunk in chunked(pending_rows, CHUNK_SIZE):
         chunk_updates = []  # list of (row_number, [genre, year, decade])
 
         for row_number, artist_name, album_name in chunk:
-            key = (artist_name, album_name)
-            if key in migration_cache:
-                genre, year, decade = migration_cache[key]
-                reused += 1
-            else:
-                _, genre, year = fetch_album_tracks(artist_name, album_name)
-                decade = compute_decade(year)
-                api_calls += 1
+            _, genre, year = fetch_album_tracks(artist_name, album_name)
+            decade = compute_decade(year)
+            api_calls += 1
 
             chunk_updates.append((row_number, [genre, year, decade]))
             print(f"  row {row_number}: {artist_name} - {album_name} "
@@ -139,7 +97,7 @@ def main():
         print(f"  -> wrote {written}/{len(pending_rows)} row(s) so far.")
 
     print(f"\n{len(pending_rows)} row(s) processed "
-          f"({api_calls} album.getInfo call(s), {reused} reused from Music).")
+          f"({api_calls} album.getInfo call(s)).")
 
     if args.dry_run:
         print("Dry run: nothing written to the sheet.")
