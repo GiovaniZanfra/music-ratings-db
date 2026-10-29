@@ -4,11 +4,6 @@ on:
   schedule:
     - cron: '50 2 * * *'  # 23:50 in Brasília (UTC-3)
   workflow_dispatch:
-    inputs:
-      enrich:
-        description: 'Also run album enrichment (enrich_albums.py)'
-        type: boolean
-        default: false
 
 jobs:
   update:
@@ -36,5 +31,4 @@ jobs:
         run: python run.py
 
       - name: Enrich albums
-        if: ${{ inputs.enrich }}
         run: python enrich_albums.py
