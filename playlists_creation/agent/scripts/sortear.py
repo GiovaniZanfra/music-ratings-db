@@ -2,13 +2,15 @@
 """Sorteio semanal de álbuns (RYM top 40/ano) com estado persistido.
 
 Uso (a partir da raiz do projeto):
-  python agent/scripts/sortear.py novo [--geral 15] [--brasil 5] [--top-geral K] [--top-brasil K] [--excluir-anteriores]
+  python agent/scripts/sortear.py novo [--geral 15] [--brasil 5] [--top-geral K] [--top-brasil K] [--excluir-anteriores] [--excluir-avaliados]
   python agent/scripts/sortear.py tirar "trecho do artista ou álbum"   # remove e sorteia substituto
   python agent/scripts/sortear.py trocar                               # troca o último que entrou
   python agent/scripts/sortear.py mostrar
 
 tirar/trocar/mostrar agem no sorteio mais recente (ou --id).
 novo/tirar/trocar aceitam --sem <gênero> (ex.: --sem metal): exclui por gênero primário daí em diante.
+--excluir-avaliados tira os álbuns que já têm nota na planilha music_db_ratings
+(lista em agent/sorteios/avaliados.csv, gerada por agent/scripts/avaliados.py).
 Aleatoriedade: secrets.SystemRandom (os.urandom), sem seed.
 Cada comando grava <dir>/<id>/estado.json + sorteio.md e regenera <dir>/historico.csv.
 """
@@ -33,6 +35,7 @@ ARQUIVOS = {
 FONTES = ("geral", "brasil")
 # --sem <termo> exclui por gênero primário; famílias que não se resolvem por substring do nome
 FAMILIAS = {"metal": r"metal|deathcore|djent|grind|crossover_thrash"}
+AVALIADOS = ROOT / "agent/sorteios/avaliados.csv"
 RNG = secrets.SystemRandom()
 METODO = "secrets.SystemRandom (entropia do SO via os.urandom, sem seed)"
 
@@ -103,6 +106,14 @@ def anteriores(base, sorteio_id):
     return m
 
 
+def avaliados():
+    """chaves do RYM que já têm nota na planilha (ver agent/scripts/avaliados.py)."""
+    if not AVALIADOS.exists():
+        sys.exit(f"{AVALIADOS.relative_to(ROOT)} não existe: rode agent/scripts/avaliados.py antes")
+    with open(AVALIADOS, encoding="utf-8") as f:
+        return {l["chave"] for l in csv.DictReader(f)}
+
+
 def colunas_excluidas(df, termos):
     pad = "|".join(FAMILIAS.get(t, re.sub(r"[^a-z0-9]+", "_", norm(t))) for t in termos)
     return [c for c in df.columns if c.startswith("genre_") and re.search(pad, c[len("genre_"):])]
@@ -119,6 +130,8 @@ def pool(dfs, estado, fonte, bloqueio_anterior):
     bloqueadas = {p["chave"] for p in estado["escolhidos"] + estado["removidos"]}
     if estado["regras"]["excluir_anteriores"]:
         bloqueadas |= bloqueio_anterior
+    if estado["regras"].get("excluir_avaliados"):
+        bloqueadas |= avaliados()
     return df[~df.chave.isin(bloqueadas)]
 
 
@@ -151,6 +164,7 @@ def render(estado, dfs, ant):
         f"- Método: {estado['metodo']}",
         "- Regras: " + "; ".join(descrever_regra(regras, f) for f in FONTES if regras[f]["n"])
         + ("; excluindo álbuns de sorteios anteriores" if regras["excluir_anteriores"] else "")
+        + ("; excluindo álbuns que já têm nota na planilha" if regras.get("excluir_avaliados") else "")
         + (f"; sem gênero primário: {', '.join(regras['sem'])}" if regras.get("sem") else ""),
         "- Elegíveis no momento do sorteio: "
         + ", ".join(f"{f} {estado['elegiveis'][f]}" for f in FONTES if f in estado["elegiveis"]),
@@ -221,6 +235,7 @@ def cmd_novo(args, base, dfs):
             "geral": {"n": args.geral, "top": args.top_geral},
             "brasil": {"n": args.brasil, "top": args.top_brasil},
             "excluir_anteriores": args.excluir_anteriores,
+            "excluir_avaliados": args.excluir_avaliados,
             "sem": args.sem,
         },
         "elegiveis": {},
@@ -306,6 +321,8 @@ def main():
     n.add_argument("--top-geral", type=int)
     n.add_argument("--top-brasil", type=int)
     n.add_argument("--excluir-anteriores", action="store_true")
+    n.add_argument("--excluir-avaliados", action="store_true",
+                   help="tira os álbuns com nota na planilha (agent/sorteios/avaliados.csv)")
 
     t = sub.add_parser("tirar")
     t.add_argument("consulta")
