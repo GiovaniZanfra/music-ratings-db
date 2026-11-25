@@ -20,7 +20,7 @@ Tudo o que for gerado fica salvo em `agent/` **antes** de responder. No fim da r
   - `python3 agent/scripts/sortear.py novo [--geral 15] [--brasil 5] [--top-geral K] [--top-brasil K] [--excluir-anteriores] [--excluir-avaliados]`
   - `python3 agent/scripts/sortear.py tirar "trecho do artista ou álbum"`, `... trocar` e `... mostrar` agem no sorteio mais recente (ou no de `--id`).
   - `--sem <gênero>` (em `novo`, `tirar` e `trocar`) exclui pelo gênero primário dali em diante e fica gravado na regra do sorteio. `--sem metal` pega tudo com "metal" no nome, mais grindcore, deathgrind, deathcore, djent e crossover thrash. Metal que aparece só como gênero secundário continua elegível.
-  - `--excluir-avaliados` tira os álbuns que já têm nota na planilha `music_db_ratings` (FinalScore na aba Albums), lidos de `agent/sorteios/avaliados.csv`. Antes de usar, atualize esse arquivo: baixe a planilha pelo conector do Google Drive (export `.xlsx`) e rode `python3 agent/scripts/avaliados.py <arquivo.xlsx>`. Ele casa os nomes do Last.fm com os do RYM e lista os casos pra conferir (nome diferente, homônimo em vários anos). Se aparecer um nome que não casou e deveria, ponha em `ALIAS_ARTISTA`/`ALIAS_ALBUM` no script.
+  - `--excluir-avaliados` tira os álbuns que já têm nota na planilha `music_db_ratings` (FinalScore na aba Albums), lidos de `agent/sorteios/avaliados.csv`. **É opcional e fica desligado por padrão: só use quando pedirem nesse sorteio** ("sem os que já têm nota", "sem os do music-ratings-db"). Ter usado num sorteio anterior não vale pro próximo. Antes de usar, atualize esse arquivo: baixe a planilha pelo conector do Google Drive (export `.xlsx`) e rode `python3 agent/scripts/avaliados.py <arquivo.xlsx>`. Ele casa os nomes do Last.fm com os do RYM e lista os casos pra conferir (nome diferente, homônimo em vários anos). Se aparecer um nome que não casou e deveria, ponha em `ALIAS_ARTISTA`/`ALIAS_ALBUM` no script.
   - Ele grava `agent/sorteios/<AAAA-MM-DD>/estado.json` + `sorteio.md` e regenera `agent/sorteios/historico.csv` (todos os álbuns que já saíram). Esse histórico é a fonte pra "álbum de lista anterior" e pra "excluir anteriores".
   - A saída já traz o método, o número de elegíveis, a tabela, o bloco pra copiar e as coincidências. Repasse isso, sem mexer no resultado.
 - **Playlists curadas**: `agent/playlists/AAAA-MM-DD_<slug>.md`, com critério, restrições, lista (tabela + bloco pra copiar) e o que ficou de fora. Para checar "álbum de lista anterior", olhe também essa pasta.
@@ -34,10 +34,11 @@ Tudo o que for gerado fica salvo em `agent/` **antes** de responder. No fim da r
 2. Tem que ser aleatório de verdade: aleatoriedade do sistema, sem seed fixa e sem "balancear" nada. Diga qual método usou e quantos álbuns eram elegíveis.
 3. Só aplique filtro de posição quando pedido, por exemplo "top 10 do ano" no geral e "top 5" no Brasil. "Sem filtro" quer dizer o arquivo inteiro.
 4. Não repita álbum entre geral e Brasil.
-5. Não exclua álbuns de sorteios anteriores, a menos que peçam. O mesmo vale pros que já têm nota na planilha (`--excluir-avaliados`).
-6. "Tira X": remova e sorteie um substituto do mesmo pool e com a mesma regra. O removido não volta. "Troca" quer dizer trocar o último que entrou.
-7. Entregue sempre: uma tabela curta (ano, posição, artista – álbum, rating, gêneros) e depois a lista final completa num bloco de código, no formato `Artista - Álbum (Ano)`.
-8. Comente coincidências em uma linha (artista repetido, brasileiro que saiu pelo geral, álbum de lista anterior), sem mexer no resultado.
+5. Não exclua álbuns de sorteios anteriores, a menos que peçam.
+6. Por padrão, álbuns que já têm nota no music-ratings-db **continuam no sorteio**. Só tire (`--excluir-avaliados`) quando pedirem naquele sorteio. Na dúvida, não tire e diga que dá pra refazer sem eles.
+7. "Tira X": remova e sorteie um substituto do mesmo pool e com a mesma regra. O removido não volta. "Troca" quer dizer trocar o último que entrou.
+8. Entregue sempre: uma tabela curta (ano, posição, artista – álbum, rating, gêneros) e depois a lista final completa num bloco de código, no formato `Artista - Álbum (Ano)`.
+9. Comente coincidências em uma linha (artista repetido, brasileiro que saiu pelo geral, álbum de lista anterior), sem mexer no resultado.
 
 ## Playlist curada (quando não é sorteio)
 

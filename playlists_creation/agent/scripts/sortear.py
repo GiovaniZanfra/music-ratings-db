@@ -9,8 +9,9 @@ Uso (a partir da raiz do projeto):
 
 tirar/trocar/mostrar agem no sorteio mais recente (ou --id).
 novo/tirar/trocar aceitam --sem <gênero> (ex.: --sem metal): exclui por gênero primário daí em diante.
---excluir-avaliados tira os álbuns que já têm nota na planilha music_db_ratings
-(lista em agent/sorteios/avaliados.csv, gerada por agent/scripts/avaliados.py).
+--excluir-avaliados (opcional, desligado por padrão) tira os álbuns que já têm nota na planilha
+music_db_ratings (lista em agent/sorteios/avaliados.csv, gerada por agent/scripts/avaliados.py).
+Sem a flag, os álbuns com nota continuam no sorteio.
 Aleatoriedade: secrets.SystemRandom (os.urandom), sem seed.
 Cada comando grava <dir>/<id>/estado.json + sorteio.md e regenera <dir>/historico.csv.
 """
@@ -322,7 +323,8 @@ def main():
     n.add_argument("--top-brasil", type=int)
     n.add_argument("--excluir-anteriores", action="store_true")
     n.add_argument("--excluir-avaliados", action="store_true",
-                   help="tira os álbuns com nota na planilha (agent/sorteios/avaliados.csv)")
+                   help="opcional: tira os álbuns com nota na planilha (agent/sorteios/avaliados.csv); "
+                        "sem a flag eles continuam no sorteio")
 
     t = sub.add_parser("tirar")
     t.add_argument("consulta")
